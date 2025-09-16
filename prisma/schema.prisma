@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model MockSession {
+  id String @id @default(uuid())
+  clerkID String?
+  deviceID String 
+
+  mock Mock @relation(fields: [mockID], references: [id])
+  mockID String
+}
+
+model Mock {
+  id           String @id @default(uuid())
+  subject      String
+  instructions String
+  clerkID      String
+
+  totalTimeMins Int 
+
+  questions Question[]
+  sessions MockSession[] 
+
+  createdAt DateTime @default(now())
+}
+
+model Question {
+  id      String   @id @default(uuid())
+  number  Int
+  content String
+  marks   Int 
+  options Option[]
+
+  mock Mock @relation(fields: [mockID], references: [id])
+  mockID String
+}
+
+model Option {
+  id      String @id @default(uuid())
+  number  Int
+  content String
+
+  question   Question @relation(fields: [questionID], references: [id])
+  questionID String
+}
