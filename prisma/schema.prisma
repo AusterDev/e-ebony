@@ -1,6 +1,8 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
+  engineType = "library"
+  binaryTargets = ["native"]
 }
 
 datasource db {
@@ -8,13 +10,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model MockSession {
-  id String @id @default(uuid())
-  clerkID String?
-  deviceID String 
+model Device {
+  id      String  @id
+  label   String
+  clerkID String? @unique
+}
 
-  mock Mock @relation(fields: [mockID], references: [id])
+model MockSession {
+  id       String  @id @default(uuid())
+  clerkID  String? @unique
+  deviceID String  @unique
+
+  mock   Mock   @relation(fields: [mockID], references: [id])
   mockID String
+
+  Answer Answer[]
+
+  createdAt DateTime @default(now())
 }
 
 model Mock {
@@ -23,10 +35,10 @@ model Mock {
   instructions String
   clerkID      String
 
-  totalTimeMins Int 
+  totalTimeMins Int
 
   questions Question[]
-  sessions MockSession[] 
+  sessions  MockSession[]
 
   createdAt DateTime @default(now())
 }
@@ -35,11 +47,19 @@ model Question {
   id      String   @id @default(uuid())
   number  Int
   content String
-  marks   Int 
-  options Option[]
+  marks   Int
+  negativeMarks Int
+  options Option[] @relation("options")
 
-  mock Mock @relation(fields: [mockID], references: [id])
+  correctOption Option? @relation(name: "correctOption", fields: [correctOptionID], references: [id])
+
+  correctOptionNumber Int
+  correctOptionID     String? @unique
+
+  mock   Mock   @relation(fields: [mockID], references: [id])
   mockID String
+
+  Answer Answer[]
 }
 
 model Option {
@@ -47,6 +67,24 @@ model Option {
   number  Int
   content String
 
-  question   Question @relation(fields: [questionID], references: [id])
+  question   Question @relation("options", fields: [questionID], references: [id])
   questionID String
+
+  correctFor Question? @relation("correctOption")
+
+  Answer Answer[]
+}
+
+model Answer {
+  id         String   @id @default(uuid())
+  questionID String
+  optionID   String
+  deviceID   String
+  mockID     String
+
+  question   Question @relation(fields: [questionID], references: [id])
+  option     Option   @relation(fields: [optionID], references: [id])
+  session    MockSession @relation(fields: [deviceID], references: [deviceID])
+
+  @@unique([questionID, deviceID])
 }

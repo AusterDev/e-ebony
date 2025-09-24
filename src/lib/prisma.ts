@@ -1,7 +1,7 @@
-import { PrismaClient } from "../generated/prisma/client";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
 
-const prisma = new PrismaClient({
-  datasourceUrl: import.meta.env.DATABASE_URL,
-});
+const { PrismaClient } = require("../generated/prisma/client.js");
 
+const prisma: typeof PrismaClient = new PrismaClient();
 export default prisma;
