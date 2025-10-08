@@ -6,7 +6,10 @@
         questionsToCreate,
         totalQuestionsToCreate,
     } from "../stores/mock/create/questions";
-    import { CreateMockRequestSchema } from "../schemas/mock";
+    import {
+        CreateMockMetaUISchema,
+        CreateMockRequestSchema,
+    } from "../schemas/mock";
 
     import type { APIResponse } from "../types/response";
     import type { Mock } from "../generated/prisma";
@@ -18,13 +21,38 @@
     let totalTime = $derived(timePerQuestion * $totalQuestionsToCreate);
 
     let formErrors: Record<string, string> = $state({});
+    
+    $effect(() => {
+        const parsed = CreateMockMetaUISchema.safeParse({
+            subject: subject,
+            instructions: instructions,
+            totalTime: totalTime,
+        });
+
+        if (!parsed.success) {
+            const tempErrors: Record<string, string> = {};
+
+            parsed.error.issues.forEach((issue) => {
+                const path = issue.path.join(".");
+                tempErrors[path] = issue.message;
+            });
+
+            formErrors = tempErrors;
+        } else {
+            formErrors = {};
+        }
+    });
 
     async function submit() {
         const parsed = CreateMockRequestSchema.safeParse({
             subject,
             instructions,
-            questions: questionsToCreate,
+            totalTime: totalTime,
+            questions: Object.values($questionsToCreate),
         });
+
+        console.log($questionsToCreate)
+        console.log(parsed);
 
         if (!parsed.success) {
             alert("Please fix validation errors before submitting!");
@@ -40,7 +68,7 @@
                 body: JSON.stringify({
                     subject,
                     instructions,
-                    questions: questionsToCreate,
+                    questions: Object.values($questionsToCreate),
                     totalTime: totalTime,
                 }),
             });
@@ -48,9 +76,9 @@
             const body = await res.json();
             const b = body as APIResponse<Mock>;
 
-            if (!b.ok || !b.d) throw Error("!ok", b.error);
-            
-            alert("Added " + b.d.id)
+            if (!b.ok || !b.d) return console.error(b.error);
+
+            alert("Added " + b.d.id);
         } catch (error) {
             console.error("Something went wrong", error);
         }
@@ -105,7 +133,5 @@
         </label>
     </div>
 
-    <button type="submit" class="text-2xl">
-        Submit
-    </button>
+    <button type="submit" class="text-2xl"> Submit </button>
 </form>

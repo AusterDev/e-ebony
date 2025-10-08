@@ -27,10 +27,18 @@ export const questionSchema = z.object({
     }),
 });
 
-export const CreateMockRequestSchema = z.object({
+const essentials = {
     subject: z.string().min(1).max(45),
     instructions: z.string().max(20_000),
-    totalTimeMins: z.number().min(1),
+    totalTime: z.number().min(1),
+}
+
+export const CreateMockMetaUISchema = z.object({
+    ...essentials,
+});
+
+export const CreateMockRequestSchema = z.object({
+    ...essentials,
     questions: z.array(questionSchema).superRefine((questions, ctx) => {
         const seen = new Set<number>();
         questions.forEach((q, idx) => {

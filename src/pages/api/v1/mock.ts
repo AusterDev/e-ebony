@@ -27,6 +27,7 @@ export async function GET(ctx: APIContext) {
 
 export async function POST(ctx: APIContext) {
     const user = await ctx.locals.currentUser();
+
     if (!user) {
         return new Response(apiResponse<any>(false, null, { type: "signatureless", cause: "Unauthorized" }), { status: 403 });
     }
@@ -39,7 +40,7 @@ export async function POST(ctx: APIContext) {
             data: {
                 subject: parsed.subject,
                 instructions: parsed.instructions,
-                totalTimeMins: parsed.totalTimeMins,
+                totalTimeMins: parsed.totalTime,
                 clerkID: user.id,
             },
         });
@@ -51,7 +52,7 @@ export async function POST(ctx: APIContext) {
                     number: question.number,
                     content: question.content,
                     marks: question.marks,
-                    negatveMarks: question.negativeMarks,
+                    negativeMarks: question.negativeMarks,
                     correctOptionNumber: question.correctOptionNumber,
                 },
             });
@@ -81,10 +82,11 @@ export async function POST(ctx: APIContext) {
 
         return new Response(apiResponse<Mock>(true, newMock), { status: 201 });
     } catch (error) {
+        console.error(error)
         if (error instanceof Error && "issues" in (error as any)) {
             return new Response(apiResponse<any>(false, null, { type: "validation", cause: (error as any).issues }), { status: 400 });
         }
 
-        return new Response(apiResponse<any>(false, null, { type: "signatureless", cause: "Invalid request" }), { status: 400 });
+        return new Response(apiResponse<any>(false, null, { type: "signatureless", cause: "Internal server error" }), { status: 500 });
     }
 }

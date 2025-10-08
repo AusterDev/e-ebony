@@ -12,6 +12,7 @@
     "@astrojs/node": "^9.4.3",
     "@astrojs/svelte": "^7.1.1",
     "@clerk/astro": "^2.13.0",
+    "@clerk/backend": "^2.17.1",
     "@prisma/client": "^6.16.1",
     "@prisma/extension-accelerate": "^2.0.2",
     "@tailwindcss/vite": "^4.1.13",

@@ -25,13 +25,12 @@
   <textarea
     bind:value={text}
     class="w-full h-full border rounded p-2 font-mono resize-y"
-    on:blur={stopEditing}
-    autofocus
+    onblur={stopEditing}
   ></textarea>
 {:else}
   <div
     class="prose prose-sm w-full h-full border border-gray-300 rounded p-2 cursor-text"
-    on:click={startEditing}
+    onclick={startEditing}
   >
     {@html renderedHtml || "<span class='text-gray-400'>Click to edit…</span>"}
   </div>
