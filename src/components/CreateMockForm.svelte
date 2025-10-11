@@ -13,6 +13,7 @@
 
     import type { APIResponse } from "../types/response";
     import type { Mock } from "../generated/prisma";
+    import ErrorDialog from "./ErrorDialog.svelte";
 
     let subject = $state("");
     let instructions = $state("Instructions **here**");
@@ -21,7 +22,9 @@
     let totalTime = $derived(timePerQuestion * $totalQuestionsToCreate);
 
     let formErrors: Record<string, string> = $state({});
-    
+
+    let errorDialog: null | string = $state(null);
+
     $effect(() => {
         const parsed = CreateMockMetaUISchema.safeParse({
             subject: subject,
@@ -43,6 +46,9 @@
         }
     });
 
+    function clearErrorMsg() {
+        errorDialog = null;
+    }
     async function submit() {
         const parsed = CreateMockRequestSchema.safeParse({
             subject,
@@ -51,12 +57,9 @@
             questions: Object.values($questionsToCreate),
         });
 
-        console.log($questionsToCreate)
-        console.log(parsed);
-
         if (!parsed.success) {
-            alert("Please fix validation errors before submitting!");
-            console.log(parsed.error.format());
+            console.error("Validation failed:", parsed.error.format());
+            errorDialog = "Please fix the form errors before submitting.";
             return;
         }
 
@@ -65,6 +68,9 @@
         try {
             const res = await fetch(endpoint, {
                 method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
                 body: JSON.stringify({
                     subject,
                     instructions,
@@ -73,17 +79,32 @@
                 }),
             });
 
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error(`Server error ${res.status}: ${errorText}`);
+                errorDialog = `Server error ${res.status}: ${res.statusText}`;
+                return;
+            }
+
             const body = await res.json();
             const b = body as APIResponse<Mock>;
 
-            if (!b.ok || !b.d) return console.error(b.error);
+            if (!b.ok || !b.d) {
+                console.error("API response error:", b.error);
+                errorDialog = `API error: ${b.error || "Unknown error"}`;
+                return;
+            }
 
-            alert("Added " + b.d.id);
+            alert("Added mock with ID: " + b.d.id);
         } catch (error) {
-            console.error("Something went wrong", error);
+            console.error("Unexpected error:", error);
+            errorDialog =
+                "An unexpected internal error occurred. Please try again.";
         }
     }
 </script>
+
+<ErrorDialog errorMsg={errorDialog || null} clearMsg={clearErrorMsg} />
 
 <form
     class="p-2 flex flex-col items-center [&_label]:text-slate-900 [&_label]:text-xl [&_input]:p-4 [&_input]:border-1 [&_input]:border-black space-y-8 w-1/2"

@@ -5,9 +5,12 @@
     questionsToCreate,
     totalQuestionsToCreate,
   } from "../stores/mock/create/questions";
+  import JSONImport from "./JSONImport.svelte";
 
   let questionsCreatorHidden = $state(true);
   let showAddForm = $state(false);
+  let showJSONModal = $state(false);
+  let editingQuestionId: number | null = $state(null);
 
   let questionsArray = $derived(Object.entries($questionsToCreate));
 
@@ -29,7 +32,6 @@
   }
 
   let formData = $state(makeEmptyForm());
-
   let formErrors: Record<string, string> = $state({});
 
   $effect(() => {
@@ -79,181 +81,267 @@
       return;
     }
 
-    questionsToCreate.setKey($totalQuestionsToCreate + 1, parsed.data);
+    if (editingQuestionId !== null) {
+      questionsToCreate.setKey(editingQuestionId, parsed.data);
+    } else {
+      questionsToCreate.setKey($totalQuestionsToCreate + 1, parsed.data);
+    }
+
     showAddForm = false;
     resetForm();
   }
 
   function resetForm() {
     formData = makeEmptyForm();
+    editingQuestionId = null;
+  }
+
+  function toggleJSONModel() {
+    showJSONModal = !showJSONModal;
   }
 </script>
 
-<!-- Header bar -->
-<div class="flex justify-between border border-slate-900 p-4 w-full">
-  <p>{$totalQuestionsToCreate} questions</p>
+<div
+  class="flex justify-between items-center border border-gray-700 p-4 bg-gray-50"
+>
+  <span class="text-lg font-semibold">{$totalQuestionsToCreate} questions</span>
   <button
+    class="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-500"
     onclick={(e) => {
       e.preventDefault();
       questionsCreatorHidden = false;
-    }}>Edit</button
+    }}
   >
+    Edit
+  </button>
 </div>
 
 {#if !questionsCreatorHidden}
-  <div class="fixed inset-0 flex items-center justify-center z-50">
+  <div
+    class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50"
+  >
+    {#if showJSONModal}
+      <JSONImport toggleJSON={toggleJSONModel} />
+    {/if}
+
     <div
-      class="bg-slate-200 p-6 rounded-lg border border-black w-2/3 h-2/3 flex flex-col"
+      class="bg-white rounded-lg shadow-lg w-3/4 h-3/4 flex flex-col overflow-hidden"
     >
-      <div class="flex justify-between items-center mb-4">
-        <p>{$totalQuestionsToCreate} questions</p>
-        <div class="space-x-4">
+      <div
+        class="flex justify-between items-center px-6 py-4 border-b border-gray-200"
+      >
+        <span class="font-semibold">{$totalQuestionsToCreate} questions</span>
+        <div class="space-x-3">
           <button
+            class="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-500"
             onclick={(e) => {
               e.preventDefault();
               showAddForm = true;
-            }}>Add</button
+              resetForm();
+            }}
           >
-          <button class="text-slate-800">Import JSON</button>
+            + Add
+          </button>
+          <button
+            class="px-3 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-200"
+            onclick={(e) => {
+              e.preventDefault();
+              showJSONModal = true;
+            }}
+          >
+            Import JSON
+          </button>
         </div>
       </div>
 
-      {#if $totalQuestionsToCreate === 0}
-        <div class="flex-1 flex items-center justify-center h-1/2">
-          No questions added
+      <div class="flex-1 flex overflow-hidden">
+
+        <div
+          class="w-1/2 border-r border-gray-200 p-4 overflow-y-auto bg-gray-50"
+        >
+          {#if $totalQuestionsToCreate === 0}
+            <div class="flex items-center justify-center h-full text-gray-500">
+              No questions added
+            </div>
+          {:else}
+            <ol class="space-y-3">
+              {#each questionsArray as [id, question]}
+                <li
+                  class="p-3 bg-white border border-gray-300 rounded flex justify-between items-center hover:shadow-sm"
+                >
+                  <div class="flex-1 pr-2">
+                    <div class="font-medium">
+                      {question.number ?? id}. {question.content ?? "Untitled"}
+                    </div>
+                    <div class="text-sm text-gray-500">
+                      Marks: {question.marks}
+                    </div>
+                  </div>
+                  <button
+                    class="px-2 py-1 text-sm text-gray-600 hover:underline"
+                    onclick={(e) => {
+                      e.preventDefault();
+                      formData = { ...question };
+                      editingQuestionId = Number(id);
+                      showAddForm = true;
+                    }}
+                  >
+                    Edit
+                  </button>
+                </li>
+              {/each}
+            </ol>
+          {/if}
         </div>
-      {/if}
 
-      {#if $totalQuestionsToCreate > 0}
-        <ol class="flex-1 overflow-y-auto space-y-2">
-          {#each questionsArray as [id, question]}
-            <li class="p-2 border border-gray-400 rounded flex justify-between">
-              <span
-                >{question.number ?? id}. {question.content ?? "Untitled"}</span
-              >
-              <span>Marks: {question.marks}</span>
-            </li>
-          {/each}
-        </ol>
-      {/if}
+  
+        {#if showAddForm}
+          <div class="w-1/2 p-4 overflow-y-auto">
+            <h3 class="text-xl font-semibold mb-4">
+              {editingQuestionId !== null ? "Edit Question" : "Add Question"}
+            </h3>
 
-      {#if showAddForm}
-        <div class="fixed inset-0 bg-white p-6 z-50 flex flex-col">
-          <div
-            class="flex-1 flex flex-row space-x-6 [&_label]:text-slate-900 [&_label]:text-xl [&_input]:p-2 [&_input]:border [&_input]:border-black [&_textarea]:border [&_textarea]:p-2"
-          >
-            <!-- Left pane -->
-            <div class="flex-1 flex flex-col space-y-4">
+            <div class="space-y-4">
               <div>
-                <p class="font-bold text-lg">Add Question</p>
-                <p class="italic text-base">Markdown is supported</p>
-              </div>
-
-              <label class="w-full h-full">
-                Content
+                <!-- svelte-ignore a11y_label_has_associated_control -->
+                <label class="block mb-1 text-gray-700 font-medium"
+                  >Content</label
+                >
                 <MarkdownEditor bind:text={formData.content} />
                 {#if formErrors["content"]}
-                  <span class="text-red-600 text-sm"
-                    >{formErrors["content"]}</span
-                  >
-                {/if}
-              </label>
-
-              <label class="flex flex-col">
-                <span class="mb-1">Marks for being correct:</span>
-                <input type="number" bind:value={formData.marks} />
-                {#if formErrors["marks"]}
-                  <span class="text-red-600 text-sm">{formErrors["marks"]}</span
-                  >
-                {/if}
-              </label>
-
-              <label class="flex flex-col">
-                <span class="mb-1">Marks for being wrong:</span>
-                <input type="number" bind:value={formData.negativeMarks} />
-                {#if formErrors["negativeMarks"]}
-                  <span class="text-red-600 text-sm"
-                    >{formErrors["negativeMarks"]}</span
-                  >
-                {/if}
-              </label>
-            </div>
-
-            <div class="flex-1 flex flex-col space-y-3">
-              <h4 class="font-semibold text-lg">Options</h4>
-              <div class="flex-1 overflow-y-auto space-y-2 pr-2">
-                {#each formData.options as opt, i (opt.number)}
-                  <div
-                    class="flex items-start space-x-3 border border-gray-300 rounded p-2"
-                  >
-                    <input
-                      type="radio"
-                      name="correctOption"
-                      value={opt.number}
-                      bind:group={formData.correctOptionNumber}
-                      class="mt-1"
-                    />
-
-                    <div class="flex-1 flex flex-col space-y-1 w-full min-h-10">
-                      <span class="text-sm font-medium text-gray-700"
-                        >Option #{opt.number}</span
-                      >
-      
-                      <textarea class="p-4" bind:value={formData.options[i].content}></textarea>
-                      {#if formErrors[`options.${i}.content`]}
-                        <span class="text-red-600 text-sm"
-                          >{formErrors[`options.${i}.content`]}</span
-                        >
-                      {/if}
-                    </div>
-
-                    <button
-                      class="ml-2 text-sm text-red-600 underline"
-                      onclick={(e) => {
-                        e.preventDefault();
-                        deleteOption(i);
-                      }}
-                    >
-                      ✕
-                    </button>
+                  <div class="text-red-600 text-sm mt-1">
+                    {formErrors["content"]}
                   </div>
-                {/each}
+                {/if}
               </div>
 
-              <button
-                onclick={(e) => {
-                  e.preventDefault();
-                  addOption();
-                }}
-                class="self-start underline text-sm"
-              >
-                + Add option
-              </button>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <!-- svelte-ignore a11y_label_has_associated_control -->
+                  <label class="block mb-1 text-gray-700">Marks (correct)</label
+                  >
+                  <input
+                    type="number"
+                    bind:value={formData.marks}
+                    class="w-full border border-gray-300 rounded px-2 py-1 focus:ring focus:ring-gray-200"
+                  />
+                  {#if formErrors["marks"]}
+                    <div class="text-red-600 text-sm mt-1">
+                      {formErrors["marks"]}
+                    </div>
+                  {/if}
+                </div>
+                <div>
+                  <!-- svelte-ignore a11y_label_has_associated_control -->
+                  <label class="block mb-1 text-gray-700">Marks (wrong)</label>
+                  <input
+                    type="number"
+                    bind:value={formData.negativeMarks}
+                    class="w-full border border-gray-300 rounded px-2 py-1 focus:ring focus:ring-gray-200"
+                  />
+                  {#if formErrors["negativeMarks"]}
+                    <div class="text-red-600 text-sm mt-1">
+                      {formErrors["negativeMarks"]}
+                    </div>
+                  {/if}
+                </div>
+              </div>
+
+              <div>
+                <h4 class="font-medium mb-2">Options</h4>
+                <div class="space-y-3">
+                  {#each formData.options as opt, i (opt.number)}
+                    <div
+                      class="border border-gray-300 rounded p-3 flex items-start space-x-3"
+                    >
+                      <input
+                        type="radio"
+                        name="correctOption"
+                        value={opt.number}
+                        bind:group={formData.correctOptionNumber}
+                        class="mt-1"
+                      />
+                      <div class="flex-1">
+                        <!-- svelte-ignore a11y_label_has_associated_control -->
+                        <label class="text-sm font-medium text-gray-700"
+                          >Option #{opt.number}</label
+                        >
+                        <textarea
+                          bind:value={formData.options[i].content}
+                          class="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:ring focus:ring-gray-200"
+                        ></textarea>
+                        {#if formErrors[`options.${i}.content`]}
+                          <div class="text-red-600 text-sm mt-1">
+                            {formErrors[`options.${i}.content`]}
+                          </div>
+                        {/if}
+                      </div>
+                      <button
+                        class="text-red-600 hover:underline text-sm"
+                        onclick={(e) => {
+                          e.preventDefault();
+                          deleteOption(i);
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  {/each}
+                </div>
+                <button
+                  class="mt-2 text-gray-600 hover:underline text-sm"
+                  onclick={(e) => {
+                    e.preventDefault();
+                    addOption();
+                  }}
+                >
+                  + Add option
+                </button>
+              </div>
+
+              <div class="pt-4 flex justify-end space-x-3">
+                <button
+                  class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500"
+                  onclick={(e) => {
+                    e.preventDefault();
+                    validateAndSave();
+                  }}
+                >
+                  Save
+                </button>
+                <button
+                  class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                  onclick={() => {
+                    showAddForm = false;
+                    resetForm();
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
+        {:else}
 
-          <div class="flex space-x-8 mt-6 justify-end">
-            <button
-              onclick={(e) => {
-                e.preventDefault();
-                validateAndSave();
-              }}>Ok</button
-            >
-            <button class="text-red-500" onclick={() => (showAddForm = false)}
-              >Cancel</button
-            >
+          <div
+            class="w-1/2 flex items-center justify-center text-gray-400 italic"
+          >
+            Select “Add” or “Edit” to work on a question
           </div>
-        </div>
-      {/if}
+        {/if}
+      </div>
 
-      <div class="flex flex-row justify-between mt-4">
-        0 selected
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
         <button
+          class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500"
           onclick={(e) => {
             e.preventDefault();
-            questionsCreatorHidden = !questionsCreatorHidden;
-          }}>Save</button
+            questionsCreatorHidden = true;
+          }}
         >
+          Done
+        </button>
       </div>
     </div>
   </div>
