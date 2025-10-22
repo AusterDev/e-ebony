@@ -24,7 +24,7 @@ model MockSession {
 
 model Mock {
   id           String @id @default(uuid())
-  subject      String
+  subject      String @unique
   instructions String
   clerkID      String
 

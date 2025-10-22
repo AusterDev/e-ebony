@@ -38,12 +38,14 @@ let unanswered = questions.filter((q: any) => q.userOptionID === null || q.userO
 let totalScore = quizResults?.totalMarks ?? 0;
 let percentage = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
 
-// Calculate time taken
 let timeTaken = "N/A";
 if (quizResults?.createdAt && quizResults?.mock?.totalTimeMins) {
   const totalMinutes = quizResults.mock.totalTimeMins;
   timeTaken = `${totalMinutes} mins`;
 }
+
+const stringifiedQuestionsJSON = JSON.stringify({ questions });
+console.log(stringifiedQuestionsJSON)
 ---
 
 <Layout>
@@ -302,10 +304,9 @@ if (quizResults?.createdAt && quizResults?.mock?.totalTimeMins) {
             </div>
           )}
 
-          <!-- Action Buttons -->
           <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8 md:mt-12">
             <button 
-              onclick="window.location.href='/mock'" 
+              onclick={`event.preventDefault(); downloadJSON(${stringifiedQuestionsJSON});`}
               class="px-8 py-4 bg-slate-800 text-white rounded-xl font-semibold text-lg shadow-lg hover:bg-slate-900 transition-all transform hover:scale-105"
             >
               Download JSON
@@ -318,7 +319,6 @@ if (quizResults?.createdAt && quizResults?.mock?.totalTimeMins) {
             </button>
           </div>
 
-          <!-- Timestamp -->
           {quizResults.createdAt && (
             <div class="mt-8 pt-8 border-t border-slate-200 text-center">
               <p class="text-sm text-slate-500">
@@ -333,4 +333,17 @@ if (quizResults?.createdAt && quizResults?.mock?.totalTimeMins) {
       </div>
     )}
   </div>
+
+  <script is:inline>
+        function downloadJSON(data) {
+            console.log(data);
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "results" + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+    } 
+    </script>
 </Layout>

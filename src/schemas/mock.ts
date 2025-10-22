@@ -28,7 +28,11 @@ export const questionSchema = z.object({
 });
 
 const essentials = {
-    subject: z.string().min(1).max(45),
+    subject: z.string()
+        .regex(/^[a-zA-Z0-9_-]+$/, {
+            message: "Can only contain letters, numbers, underscores (_), and hyphens (-). No spaces allowed."
+        })
+        .max(45),
     instructions: z.string().max(20_000),
     totalTime: z.number().min(1),
 }
