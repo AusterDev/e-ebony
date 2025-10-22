@@ -1,4 +1,5 @@
-function isSessionExpired(session: { createdAt: Date; mock: { totalTimeMins: number } }): boolean {
-    const expiry = session.createdAt.getTime() + session.mock.totalTimeMins * 60 * 1000;
+function isSessionExpired(createdAt: Date, totalTimeMins: number): boolean {
+    const expiry = createdAt.getTime() + totalTimeMins * 60 * 1000;
     return Date.now() > expiry;
 }
+ 

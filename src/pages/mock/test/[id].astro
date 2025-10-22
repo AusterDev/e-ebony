@@ -1,0 +1,100 @@
+---
+import Layout from "../../Layout.astro";
+import prisma from "../../../lib/prisma";
+import type { Option } from "../../../generated/prisma";
+import TestUI from "../../../components/TestUI.svelte";
+
+import ErrorDialog from "../../../components/ErrorDialog.svelte";
+
+const { id } = Astro.params;
+const user = await Astro.locals.currentUser();
+
+if (!user) {
+  return Astro.redirect("/auth/sign-in");
+}
+
+const mock = await prisma.mock.findUnique({
+  where: { id },
+  include: { questions: { include: { options: true } } },
+});
+
+if (!mock) {
+  return Astro.redirect("/not-found", 404);
+}
+
+let sessionError = null;
+
+try {
+  const response = await fetch(`${Astro.url.origin}/api/v1/session/session`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Cookie: Astro.request.headers.get("Cookie") || "",
+    },
+    body: JSON.stringify({ mockID: mock.id }),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || result.error) {
+    if (result.error.type) {
+      switch (result.error.type) {
+        case "conflict":
+          sessionError = null;
+          break
+        default:
+          sessionError = result.error.cause;
+      }
+    } else {
+      sessionError =
+        result.error?.cause ||
+        "An unknown error occurred while starting the test.";
+    }
+  }
+} catch (e) {
+  console.error("Session creation failed:", e);
+  sessionError = "Could not connect to the server to start the test.";
+}
+
+const questions = mock.questions.map((q: any) => ({
+  id: q.id,
+  number: q.number,
+  content: q.content,
+  marks: q.marks,
+  negativeMarks: q.negativeMarks,
+  options: q.options.map((o: Option) => ({
+    id: o.id,
+    number: o.number,
+    content: o.content,
+  })),
+}));
+
+const totalTimeMins = mock.totalTimeMins;
+const mockId = mock.id;
+---
+
+<Layout>
+  <div class="h-screen w-full">
+    {
+      sessionError && (
+        <ErrorDialog
+          errorMsg={sessionError}
+          dismissUrl="/dashboard"
+          client:load
+        />
+      )
+    }
+
+    {
+      !sessionError && (
+        <TestUI
+          {questions}
+          totalTimeMins={totalTimeMins}
+          mockId={mockId}
+          user={user}
+          client:load
+        />
+      )
+    }
+  </div>
+</Layout>

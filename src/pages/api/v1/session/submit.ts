@@ -1,80 +1,106 @@
 import type { APIContext } from "astro";
-import { getDevice, DeviceCache } from "../../../../lib/auth";
 import prisma from "../../../../lib/prisma";
 import { apiResponse } from "../../../../types/response";
-
-function isSessionExpired(session: { createdAt: Date; mock: { totalTimeMins: number } }): boolean {
-    const expiry = session.createdAt.getTime() + session.mock.totalTimeMins * 60 * 1000;
-    return Date.now() > expiry;
-}
+import type { Option } from "../../../../generated/prisma";
 
 export async function POST(ctx: APIContext) {
-    const device = await getDevice(ctx);
+    const user = await ctx.locals.currentUser();
 
-    if (!device) {
-        return new Response(apiResponse<any>(false, null, { type: "signatureless", cause: "Missing deviceID" }), { status: 403 });
+    if (!user) {
+        return new Response(apiResponse(false, null, { type: "unauthorized", cause: "User not authenticated" }), { status: 401 });
     }
 
     try {
         const session = await prisma.mockSession.findUnique({
-            where: { deviceID: device.id },
+            where: { clerkID: user.id },
             include: {
                 mock: {
                     include: {
-                        questions: { include: { options: true, correctOption: true } }
+                        questions: { include: { options: true } }
                     }
                 }
             }
         });
 
         if (!session) {
-            return new Response(apiResponse<any>(false, null, { type: "signatureless", cause: "No active session" }), { status: 403 });
+            return new Response(apiResponse(false, null, { type: "not_found", cause: "No active session found for this user." }), { status: 404 });
         }
-
-        const answers = await prisma.answer.findMany({ where: { deviceID: device.id, mockID: session.mockID } });
+        
+        const answers = await prisma.answer.findMany({ where: { clerkID: user.id, mockID: session.mockID } });
+        const answerMap = new Map(answers.map((a: { questionID: any; optionID: any; }) => [a.questionID, a.optionID]));
 
         let totalMarks = 0;
-        const questionResults = session.mock.questions.map(q => {
-            const userAnswer = answers.find((a: { questionID: string; }) => a.questionID === q.id);
-            const isCorrect = userAnswer?.optionID === q.correctOptionID;
-            if (isCorrect) totalMarks += q.marks;
+
+        const questionResults = session.mock.questions.map((q: { id: unknown; options: any[]; correctOptionNumber: any; marks: number; negativeMarks: number; number: any; content: any; correctOptionID: any; }) => {
+            const userOptionID = answerMap.get(q.id);
+            let score = 0;
+            let isCorrect = false;
+
+            const userChosenOption = userOptionID
+                ? q.options.find((opt: Option) => opt.id === userOptionID)
+                : undefined;
+
+            const correctOption = q.options.find((opt: Option) => opt.id === q.correctOptionID);
+
+            if (userChosenOption) { 
+                if (userChosenOption.id === q.correctOptionID) {
+                    score = q.marks;
+                    isCorrect = true;
+                } else {
+                    score = -q.negativeMarks;
+                }
+            }
+            
+            totalMarks += score;
+
             return {
                 id: q.id,
                 number: q.number,
-                content: q.content,
-                marks: q.marks,
-                negativeMarks: q.negativeMarks,
-                correctOptionID: q.correctOptionID,
-                userChoice: userAnswer?.optionID ?? null,
+                content: q.content, 
+                
+                userOptionID: userChosenOption?.id ?? null,
+                userOption: userChosenOption?.content ?? null,
+                correctOptionID: correctOption?.id ?? null,
+                correctOption: correctOption?.content ?? null,
+
                 isCorrect,
+                score,
             };
         });
 
-        const timeTaken = Math.floor((Date.now() - session.createdAt.getTime()) / 1000);
-        const expired = isSessionExpired(session);
+        const timeTakenSecs = Math.floor((Date.now() - session.createdAt.getTime()) / 1000);
 
-        if (expired) {
-            DeviceCache.delete(device.id);
-            await prisma.$transaction([
-                prisma.answer.deleteMany({ where: { deviceID: device.id, mockID: session.mockID } }),
-                prisma.mockSession.delete({ where: { id: session.id } }),
-            ]);
-        }
+        const result = await prisma.$transaction(async (tx: { mockResult: { create: (arg0: { data: { clerkID: string; mockID: any; totalMarks: number; timeTakenSecs: number; resultsJson: any; }; }) => any; }; answer: { deleteMany: (arg0: { where: { clerkID: string; mockID: any; }; }) => any; }; mockSession: { delete: (arg0: { where: { id: any; }; }) => any; }; }) => {
+            const newResult = await tx.mockResult.create({
+                data: {
+                    clerkID: user.id,
+                    mockID: session.mockID,
+                    totalMarks,
+                    timeTakenSecs,
+                    resultsJson: questionResults as any,
+                },
+            });
 
-        return new Response(apiResponse(true, {
-            mock: {
-                id: session.mock.id,
-                subject: session.mock.subject,
-                instructions: session.mock.instructions,
-                totalTimeMins: session.mock.totalTimeMins,
-            },
-            questions: questionResults,
+            await tx.answer.deleteMany({ where: { clerkID: user.id, mockID: session.mockID } });
+            await tx.mockSession.delete({ where: { id: session.id } });
+            
+            return newResult;
+        });
+        
+        await prisma.mockSession.deleteMany({
+            where: {
+                clerkID: user.id,
+            }
+        });
+
+        return new Response(apiResponse(true, { 
+            resultId: result.id,
             totalMarks,
-            timeTaken,
-            expired,
+            timeTaken: timeTakenSecs,
         }), { status: 200 });
 
     } catch (error) {
-        return new Response(apiResponse<any>(false, null, { type: "signatureless", cause: "Invalid request" }), { status: 400 });
+        console.error("Evaluation Error:", error);
+        return new Response(apiResponse(false, null, { type: "server_error", cause: "An error occurred during evaluation." }), { status: 500 });
     }
 }

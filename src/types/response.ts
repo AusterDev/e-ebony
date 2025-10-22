@@ -4,8 +4,8 @@ export type APIResponse<T> = {
     d: T | null
 }
 
-type ErrorResponse = {
-    type: "validation" | "signatureless" | "internal" | "warning" | "time",
+export type ErrorResponse = {
+    type: "conflict" | "unauthorized" | "server_error" | "validation" | "signatureless" | "internal" | "warning" | "time" | "not_found",
     cause: any
 }
 

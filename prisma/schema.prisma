@@ -10,16 +10,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Device {
-  id      String  @id
-  label   String
-  clerkID String? @unique
-}
-
 model MockSession {
   id       String  @id @default(uuid())
-  clerkID  String? @unique
-  deviceID String  @unique
+  clerkID  String @unique
 
   mock   Mock   @relation(fields: [mockID], references: [id])
   mockID String
@@ -41,6 +34,8 @@ model Mock {
   sessions  MockSession[]
 
   createdAt DateTime @default(now())
+
+  MockResult MockResult[]
 }
 
 model Question {
@@ -79,12 +74,26 @@ model Answer {
   id         String   @id @default(uuid())
   questionID String
   optionID   String
-  deviceID   String
+  clerkID   String
   mockID     String
 
   question   Question @relation(fields: [questionID], references: [id])
   option     Option   @relation(fields: [optionID], references: [id])
-  session    MockSession @relation(fields: [deviceID], references: [deviceID])
+  session    MockSession @relation(fields: [clerkID], references: [clerkID])
 
-  @@unique([questionID, deviceID])
+  @@unique([questionID, clerkID])
+}
+
+model MockResult {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  
+  clerkID       String
+  mockID        String
+  mock          Mock     @relation(fields: [mockID], references: [id])
+
+  totalMarks    Int
+  timeTakenSecs Int
+  
+  resultsJson   Json
 }
