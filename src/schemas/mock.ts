@@ -1,4 +1,10 @@
 import z from "astro/zod";
+import sanitizeHtml from "sanitize-html";
+
+const clean = (value: string) => sanitizeHtml(value, {
+    allowedTags: [],
+    allowedAttributes: {},
+}).trim();
 
 const optionsSchema = z.object({
     number: z.number(),
@@ -8,7 +14,8 @@ const optionsSchema = z.object({
 
 export const questionSchema = z.object({
     number: z.number(),
-    content: z.string(),
+    content: z.string()
+        .transform(value => clean(value)),
     marks: z.number().min(1),
     negativeMarks: z.number().max(0),
     correctOptionNumber: z.number(),
@@ -33,7 +40,8 @@ const essentials = {
             message: "Can only contain letters, numbers, underscores (_), and hyphens (-). No spaces allowed."
         })
         .max(45),
-    instructions: z.string().max(20_000),
+    instructions: z.string().max(20_000)
+        .transform(value => clean(value)),
     totalTime: z.number().min(1),
 }
 

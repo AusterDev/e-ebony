@@ -1,0 +1,41 @@
+---
+import { UserButton } from "@clerk/astro/components";
+---
+
+<nav class="bg-white border-b-2 border-slate-200 shadow-sm">
+  <div class="max-w-7xl mx-auto px-6 py-4">
+    <div class="flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2">
+        <div class="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center shadow-md text-slate-200">
+            e
+        </div>
+        <span class="text-2xl font-black text-slate-900 tracking-tight">Ebony</span>
+    </a>
+
+      <div class="hidden md:flex items-center gap-8">
+        <a href="/mock/own" class="text-slate-600 hover:text-slate-900 font-semibold transition-colors relative group">
+          <span>Mocks</span>
+          <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-slate-900 transition-all group-hover:w-full"></span>
+        </a>
+        <a href="/mock/create" class="text-slate-600 hover:text-slate-900 font-semibold transition-colors relative group">
+          <span>Create</span>
+          <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-slate-900 transition-all group-hover:w-full"></span>
+        </a>
+        <a href="/mock/results" class="text-slate-600 hover:text-slate-900 font-semibold transition-colors relative group">
+          <span>Results</span>
+          <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-slate-900 transition-all group-hover:w-full"></span>
+        </a>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <UserButton />
+      </div>
+
+      <button class="md:hidden p-2 text-slate-600 hover:text-slate-900 transition">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</nav>
