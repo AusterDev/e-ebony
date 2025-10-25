@@ -1,14 +1,16 @@
-// @ts-check
+// astro.config.mjs
 import { defineConfig } from 'astro/config';
-
 import tailwindcss from '@tailwindcss/vite';
 import svelte from '@astrojs/svelte';
 import cloudflare from '@astrojs/cloudflare';
 import clerk from '@clerk/astro';
 
-// https://astro.build/config
 export default defineConfig({
-  adapter: cloudflare(),
+  adapter: cloudflare({
+    platformProxy: {
+      enabled: true
+    }
+  }),
   integrations: [
     svelte(),
     clerk(),
@@ -16,7 +18,7 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     ssr: {
-    external: ["@prisma/client", "async_hooks"],
+      external: ["@prisma/client"],
     },
   },
   output: "server",

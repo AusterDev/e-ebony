@@ -29,6 +29,7 @@ pnpm-debug.log*
 # prisma 
 *.db 
 migrations/
+generated/
 
 # personal
 notes.txt
