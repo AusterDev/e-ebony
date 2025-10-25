@@ -16,7 +16,7 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     ssr: {
-      external: ["@prisma/client"],
+    external: ["@prisma/client", "async_hooks"],
     },
   },
   output: "server",
