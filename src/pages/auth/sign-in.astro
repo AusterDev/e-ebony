@@ -1,0 +1,10 @@
+---
+import Layout from "../Layout.astro";
+import { SignIn as SignInComponent } from "@clerk/astro/components";
+---
+
+<Layout>
+    <div class="flex h-screen justify-center items-center">
+        <SignInComponent signUpUrl="/auth/sign-up" />
+    </div>
+</Layout>
