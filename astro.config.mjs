@@ -1,4 +1,4 @@
-// astro.config.mjs
+// @ts-check
 import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import svelte from '@astrojs/svelte';
@@ -13,12 +13,16 @@ export default defineConfig({
   }),
   integrations: [
     svelte(),
-    clerk(),
+    clerk({
+      afterSignInUrl: '/',
+      afterSignUpUrl: '/',
+    }),
   ],
   vite: {
     plugins: [tailwindcss()],
     ssr: {
       external: ["@prisma/client"],
+      noExternal: ["@clerk/astro", "@clerk/backend"],
     },
   },
   output: "server",
