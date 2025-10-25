@@ -12,8 +12,6 @@
     "@astrojs/cloudflare": "^12.6.10",
     "@astrojs/svelte": "^7.1.1",
     "@clerk/astro": "^2.14.1",
-    "@clerk/backend": "^2.17.1",
-    "@clerk/clerk-sdk-node": "^4.13.23",
     "@prisma/client": "^6.16.1",
     "@prisma/extension-accelerate": "^2.0.2",
     "@tailwindcss/vite": "^4.1.13",
