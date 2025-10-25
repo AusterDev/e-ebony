@@ -1,7 +1,11 @@
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
+import { PrismaClient } from "@prisma/client";
 
-const { PrismaClient } = require("../generated/prisma/client.js");
+declare global {
+  var prisma: PrismaClient | undefined;
+}
 
-const prisma: typeof PrismaClient = new PrismaClient();
-export default prisma;
+export const prisma =
+  global.prisma ??
+  new PrismaClient({ log: ["query"] });
+
+if (process.env.NODE_ENV !== "production") global.prisma = prisma;
