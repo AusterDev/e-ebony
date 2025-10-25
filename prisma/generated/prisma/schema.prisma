@@ -9,8 +9,8 @@ datasource db {
 }
 
 model MockSession {
-  id       String  @id @default(uuid())
-  clerkID  String @unique
+  id      String @id @default(uuid())
+  clerkID String @unique
 
   mock   Mock   @relation(fields: [mockID], references: [id])
   mockID String
@@ -37,12 +37,12 @@ model Mock {
 }
 
 model Question {
-  id      String   @id @default(uuid())
-  number  Int
-  content String
-  marks   Int
+  id            String   @id @default(uuid())
+  number        Int
+  content       String
+  marks         Int
   negativeMarks Int
-  options Option[] @relation("options")
+  options       Option[] @relation("options")
 
   correctOption Option? @relation(name: "correctOption", fields: [correctOptionID], references: [id])
 
@@ -69,29 +69,29 @@ model Option {
 }
 
 model Answer {
-  id         String   @id @default(uuid())
+  id         String @id @default(uuid())
   questionID String
   optionID   String
-  clerkID   String
+  clerkID    String
   mockID     String
 
-  question   Question @relation(fields: [questionID], references: [id])
-  option     Option   @relation(fields: [optionID], references: [id])
-  session    MockSession @relation(fields: [clerkID], references: [clerkID])
+  question Question    @relation(fields: [questionID], references: [id])
+  option   Option      @relation(fields: [optionID], references: [id])
+  session  MockSession @relation(fields: [clerkID], references: [clerkID])
 
   @@unique([questionID, clerkID])
 }
 
 model MockResult {
-  id            String   @id @default(cuid())
-  createdAt     DateTime @default(now())
-  
-  clerkID       String
-  mockID        String
-  mock          Mock     @relation(fields: [mockID], references: [id])
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  clerkID String
+  mockID  String
+  mock    Mock   @relation(fields: [mockID], references: [id])
 
   totalMarks    Int
   timeTakenSecs Int
-  
-  resultsJson   Json
+
+  resultsJson Json
 }
