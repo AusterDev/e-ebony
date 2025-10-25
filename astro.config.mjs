@@ -8,14 +8,16 @@ import clerk from '@clerk/astro';
 
 // https://astro.build/config
 export default defineConfig({
-  vite: {
-    // @ts-ignore
-    plugins: [tailwindcss()],
-  },
   adapter: cloudflare(),
   integrations: [
     svelte(),
     clerk(),
   ],
-  output: "server", 
+  vite: {
+    plugins: [tailwindcss()],
+    ssr: {
+      external: ["@prisma/client"],
+    },
+  },
+  output: "server",
 });
