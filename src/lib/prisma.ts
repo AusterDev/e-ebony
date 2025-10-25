@@ -1,3 +1,4 @@
 import { PrismaClient } from '@prisma/client/edge';
 
-export const prisma = new PrismaClient();
+const prisma = new PrismaClient();
+export default prisma;
