@@ -1,3 +1,17 @@
-import { clerkMiddleware } from "@clerk/astro/server";
+import { clerkMiddleware, createRouteMatcher } from '@clerk/astro/server'
 
-export const onRequest = clerkMiddleware();
+const isProtectedRoute = createRouteMatcher(['/mock(.*)',])
+
+export const onRequest = clerkMiddleware((auth, context) => {
+  const { isAuthenticated, redirectToSignIn } = auth()
+
+  if (!isAuthenticated && isProtectedRoute(context.request)) {
+
+    return new Response(null, {
+        status: 302,
+        headers: {
+            Location: "/auth/sign-in?next=" + context.url,
+        }
+    })
+  }
+})

@@ -1,10 +1,12 @@
 ---
 import Layout from "../Layout.astro";
 import { SignUp as SignUpComponent } from "@clerk/astro/components";
+
+const next = Astro.url.searchParams.get("next");
 ---
 
 <Layout>
     <div class="flex h-screen justify-center items-center">
-        <SignUpComponent signInUrl="/auth/sign-in"/>
+        <SignUpComponent signInUrl={"/auth/sign-in?next=" + next} fallbackRedirectUrl={next}/>
     </div>
 </Layout>
