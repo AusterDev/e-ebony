@@ -116,7 +116,6 @@
   <div class="bg-gray-100 shadow-black shadow-lg rounded-lg w-full max-w-3xl p-8 space-y-6">
     <h2 class="text-2xl font-bold text-center text-gray-900">Import Questions</h2>
 
-    <!-- File & Paste options -->
     <div class="flex flex-col sm:flex-row justify-center sm:space-x-6 space-y-4 sm:space-y-0 text-center">
       <div>
         <input
