@@ -4,9 +4,8 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "postinstall": "prisma generate --no-engine"
+    "build": "prisma generate && astro build",
+    "preview": "astro preview"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.10",
